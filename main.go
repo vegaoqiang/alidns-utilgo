@@ -52,23 +52,33 @@ func main(){
 		os.Exit(1)
 	}
 	if Add {
-		if err := initDomainConfig().AddDomain(client); err != nil {
+		if err := initDomainConfig().AddDomainRecord(client); err != nil {
 			fmt.Println("添加解析失败：", err)
 		}
 		//todo: 展示成功解析的域名信息
 	}
 	if List {
-		if ldnconfig, err := initListDomainConfig(); err != nil {
+		ldnconfig, err := initListDomainConfig()
+		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
+		}
+		if len(DN) != 0 {
+			if result, err := ldnconfig.ListDomainRecord(client); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}else{
+				fmt.Println(result.Body.DomainRecords.Record)
+			}
 		}else{
 			if result, err := ldnconfig.ListDomain(client); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
-			}else{
+			}else {
 				fmt.Println(result)
 			}
 		}
+		
 	}
 }
 
@@ -111,8 +121,11 @@ func initDomainConfig() *aliutils.DomainConfig{
 // 以search指定的为准
 func initListDomainConfig() (*aliutils.ListDomainConfig, error) {
 	if len(DN) == 0 {
-		fmt.Println("请指定域名，如: bar.foo.com或foo.com，当指定后者，将获取该域名下所有解析")
-		os.Exit(1)
+		// 用户未指定DN，该情况将查询域名列表，同时可提供搜索关键字
+		ldnconfig := &aliutils.ListDomainConfig{
+			KeyWord: Search,
+		}
+		return ldnconfig, nil
 	}
 	domianLen := len(strings.Split(DN, "."))
 	if domianLen >= 3 {

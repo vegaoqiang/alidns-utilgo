@@ -25,6 +25,7 @@ type ListDomainConfig struct {
 	RRKeyWord		string
 	TypeKeyWord 	string
 	ValueKeyWord 	string
+	PageSize		string
 }
 
 func (account *Account) CreateClient() (result *alidns.Client, err error) {
@@ -39,7 +40,7 @@ func (account *Account) CreateClient() (result *alidns.Client, err error) {
 	return result, err
 }
 
-func (dnconfig *DomainConfig) AddDomain(client *alidns.Client) (err error) {
+func (dnconfig *DomainConfig) AddDomainRecord(client *alidns.Client) (err error) {
 		addDomainRecordRequest := &alidns.AddDomainRecordRequest{
 		DomainName: tea.String(dnconfig.DomainName),
 		RR:			tea.String(dnconfig.RR),
@@ -54,14 +55,24 @@ func (dnconfig *DomainConfig) AddDomain(client *alidns.Client) (err error) {
 	return err
 }
 
-func (ldnconfig *ListDomainConfig) ListDomain(client *alidns.Client) (result *alidns.DescribeDomainRecordsResponse, err error){
+func (ldnconfig *ListDomainConfig) ListDomainRecord(client *alidns.Client) (result *alidns.DescribeDomainRecordsResponse, err error){
 	describeDomainRecordsRequest := &alidns.DescribeDomainRecordsRequest{
 		DomainName: 	tea.String(ldnconfig.DomainName),
 		RRKeyWord: 		tea.String(ldnconfig.RRKeyWord),
 		TypeKeyWord: 	tea.String(ldnconfig.TypeKeyWord),
 		ValueKeyWord: 	tea.String(ldnconfig.ValueKeyWord),
 		KeyWord:		tea.String(ldnconfig.KeyWord),
+		PageSize:		tea.Int64(500),
 	}
 	result, err = client.DescribeDomainRecords(describeDomainRecordsRequest)
+	return result, err
+}
+
+func (ldnconfig *ListDomainConfig) ListDomain(client *alidns.Client) (result *alidns.DescribeDomainsResponse, err error) {
+	describeDomainsRequest := &alidns.DescribeDomainsRequest{
+		KeyWord: tea.String(ldnconfig.KeyWord),
+		PageSize: tea.Int64(100),
+	}
+	result, err = client.DescribeDomains(describeDomainsRequest)
 	return result, err
 }
