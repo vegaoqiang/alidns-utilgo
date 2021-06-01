@@ -19,41 +19,25 @@ type DomainConfig struct {
 	Value	   	string
 }
 
-
-// func CreateClient(accountConfig, *Account) (Result *alidns.Client, err error) {
-// 	config := &openapi.Config{
-// 		// 您的AccessKey ID
-// 		AccessKeyId: accountConfig.AccessKey,
-// 		// 您的AccessKey Secret
-// 		AccessKeySecret: accountConfig.AccessSecret,
-// 	  }
-// 	  // 访问的域名
-// 	  // config.Endpoint = tea.String("alidns.cn-hangzhou.aliyuncs.com")
-// 	  // Result = &alidns.Client{}
-// 	  Result, err = alidns.NewClient(config)
-// 	  return Result, err
-// }
+type ListDomainConfig struct {
+	DomainName		string
+	KeyWord 		string
+	RRKeyWord		string
+	TypeKeyWord 	string
+	ValueKeyWord 	string
+}
 
 func (account *Account) CreateClient() (result *alidns.Client, err error) {
 	config := &openapi.Config{
 		// 您的AccessKey ID
-		AccessKeyId: &account.AccessKey,
+		AccessKeyId: 		&account.AccessKey,
 		// 您的AccessKey Secret
-		AccessKeySecret: &account.AccessSecret,
+		AccessKeySecret: 	&account.AccessSecret,
+		RegionId: 		 	&account.Region,
 	}
 	result, err = alidns.NewClient(config)
 	return result, err
 }
-
-// func AddDomain(client *openapi.Client, config *Account) (err error){
-// 	addDomainRecordRequest := &alidns.AddDomainRecordRequest{
-// 		DomainName: tea.String(config.DomainName),
-// 		RR:			tea.String(config.RR),
-// 		Type: 		tea.String(config.Type),
-// 		Value: 		tea.String(config.Value),			
-// 	}
-// 	return client.addDomainRecord(addDomainRecordRequest)
-// }
 
 func (dnconfig *DomainConfig) AddDomain(client *alidns.Client) (err error) {
 		addDomainRecordRequest := &alidns.AddDomainRecordRequest{
@@ -68,4 +52,16 @@ func (dnconfig *DomainConfig) AddDomain(client *alidns.Client) (err error) {
 		return err
 	}
 	return err
+}
+
+func (ldnconfig *ListDomainConfig) ListDomain(client *alidns.Client) (result *alidns.DescribeDomainRecordsResponse, err error){
+	describeDomainRecordsRequest := &alidns.DescribeDomainRecordsRequest{
+		DomainName: 	tea.String(ldnconfig.DomainName),
+		RRKeyWord: 		tea.String(ldnconfig.RRKeyWord),
+		TypeKeyWord: 	tea.String(ldnconfig.TypeKeyWord),
+		ValueKeyWord: 	tea.String(ldnconfig.ValueKeyWord),
+		KeyWord:		tea.String(ldnconfig.KeyWord),
+	}
+	result, err = client.DescribeDomainRecords(describeDomainRecordsRequest)
+	return result, err
 }
