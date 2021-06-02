@@ -1,3 +1,12 @@
+### -init --init
+初始化账户信息，输入的access_key, access_secret和region并写入到文件，你也可以手动在当前用户home目录下创建`$HOME/.alidns-utilgo/config.json`文件并写入如下内容
+```
+{
+    "access_key": "xxx",
+    "access_secret": "xxx",
+    "region": "xxx"
+}
+```
 ### -add --add
 在指定的域名下添加一个新解析，搭配`-dn`一起使用，未指定`-dn`将报错
 + 在域名foo.com下添加一个bar解析，解析值为127.0.0.1
