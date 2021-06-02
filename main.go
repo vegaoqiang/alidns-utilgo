@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	Init		bool
 	Add			bool
 	Del			bool
 	List		bool
@@ -26,6 +27,7 @@ var (
 )
 
 func init(){
+	flag.BoolVar(&Init, "init", false, "初始化账户配置")
 	flag.BoolVar(&Add, "add", false, "添加解析")
 	flag.BoolVar(&Del, "del", false, "删除解析")
 	flag.BoolVar(&List, "list", false, "获取域名所有解析")
@@ -46,6 +48,9 @@ func init(){
 
 func main(){
 	flag.Parse()
+	if Init {
+		createAccountConfig()
+	}
 	client, err := initAccountConfig().CreateClient()
 	if err != nil {
 		fmt.Println("初始化客户端失败", err)
@@ -127,6 +132,55 @@ func initListDomainConfig() (*aliutils.ListDomainConfig, error) {
 		}
 		return ldnconfig, nil
 	}
+	return checkDn()
+	// domianLen := len(strings.Split(DN, "."))
+	// if domianLen >= 3 {
+	// 	// 此时的域名类型bar.foo.com
+	// 	dn := strings.SplitN(DN, ".", 2)
+	// 	if len(Search) == 0 {
+	// 		// 用户未指定search
+	// 		ldnconfig := &aliutils.ListDomainConfig{
+	// 			RRKeyWord: 		dn[0],
+	// 			DomainName: 	dn[1],
+	// 			TypeKeyWord: 	Type,
+	// 			ValueKeyWord: 	Value,
+	// 		}
+	// 		return ldnconfig, nil
+	// 	}else{
+	// 		// 用户指定了search
+	// 		ldnconfig := &aliutils.ListDomainConfig{
+	// 			RRKeyWord: 		dn[0], // 所搜时将失效
+	// 			DomainName: 	dn[1],
+	// 			TypeKeyWord: 	Type,
+	// 			ValueKeyWord: 	Value,
+	// 			KeyWord: 		Search,
+	// 		}
+	// 		return ldnconfig, nil
+	// 	}
+	// }else if domianLen == 2 {
+	// 	// 此时的域名类型foo.com
+	// 	// 当用户此时未指定search关键字，将获取foo.com下所有的解析
+	// 	ldnconfig := &aliutils.ListDomainConfig{
+	// 		DomainName: 	DN,
+	// 		TypeKeyWord: 	Type,
+	// 		ValueKeyWord: 	Value,
+	// 		KeyWord: 		Search,
+	// 	}
+	// 	return ldnconfig, nil
+	// }
+	// return &aliutils.ListDomainConfig{}, fmt.Errorf("提供的域名%v不正确", DN)
+}
+
+// func initDelDomainConfig(){
+// 	if len(DN) == 0 {
+// 		fmt.Println("请指定完整域名解析，如: bar.foo.com")
+// 		os.Exit(1)
+// 	}
+// 	ldnconfig, err := checkDn()
+	
+// }
+
+func checkDn() (*aliutils.ListDomainConfig, error) {
 	domianLen := len(strings.Split(DN, "."))
 	if domianLen >= 3 {
 		// 此时的域名类型bar.foo.com
@@ -167,14 +221,7 @@ func initListDomainConfig() (*aliutils.ListDomainConfig, error) {
 
 // 	初始化账户信息，优先从命令行获取，命令行未指定则从配置文件中获取
 func initAccountConfig() *aliutils.Account {
-	var configFile string
-	if len(Config) != 0 {
-		configFile = Config
-	}else{
-		home := os.Getenv("HOME")
-		configFile = home + "/.alidns-utilgo/config.json"
-	}
-	accountConfig := loadAccountConfig(configFile)
+	accountConfig := &aliutils.Account{}
 	if len(AccessKey) != 0 {
 		accountConfig.AccessKey = AccessKey
 	}
@@ -183,6 +230,16 @@ func initAccountConfig() *aliutils.Account {
 	}
 	if len(Region) != 0 {
 		accountConfig.Region = Region
+	}
+	if !(len(accountConfig.AccessKey) >0 && len(accountConfig.AccessSecret) > 0 && len(accountConfig.Region) > 0) {
+		var configFile string
+		if len(Config) != 0 {
+			configFile = Config
+		}else{
+			home := os.Getenv("HOME")
+			configFile = home + "/.alidns-utilgo/config.json"
+		}
+		accountConfig = loadAccountConfig(configFile)
 	}
 	if len(accountConfig.AccessKey) == 0 {
 		fmt.Println("请提供access_key")
@@ -208,8 +265,56 @@ func loadAccountConfig(config string) *aliutils.Account {
 	}
 	account := &aliutils.Account{}
 	if err := json.Unmarshal(bytes, account); err != nil {
-		fmt.Println("解析配置文件发生错误")
-		os.Exit(2)
+		fmt.Printf("解析配置文件发生错误:%v\n", config)
+		os.Exit(1)
 	}
 	return account
+}
+
+func createAccountConfig(){
+	defaultDirPath := os.Getenv("HOME") + "/.alidns-utilgo"
+	if _, err := os.Stat(defaultDirPath); err != nil {
+		os.Mkdir(defaultDirPath, 0644)
+	}
+	defaultFilePath := defaultDirPath + "/config.json"
+	var ak, as, re string
+	fmt.Print("输入access_key:")
+	fmt.Scanln(&ak)
+	if len(ak) == 0 {
+		fmt.Println("未输入access_key")
+		os.Exit(1)
+	}
+	fmt.Print("输入access_secret:")
+	fmt.Scanln(&as)
+	if len(as) == 0 {
+		fmt.Println("未输入access_secret")
+		os.Exit(1)
+	}
+	fmt.Print("输入region[缺省值cn-hangzhou]:")
+	fmt.Scanln(&re)
+	if len(re) == 0 {
+		re = "cn-hangzhou"
+	}
+	accountConfig := &aliutils.Account{
+		AccessKey: 		ak,
+		AccessSecret: 	as,
+		Region: 		re,
+	}
+	data, err := json.MarshalIndent(accountConfig, "", "    ")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fd, err := os.OpenFile(defaultFilePath, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	if _, err := fd.Write(data); err != nil {
+		fmt.Println("写入文件错误")
+		os.Exit(1)
+	}
+	fd.Close()
+	fmt.Println("初始化完成")
+	os.Exit(0)
 }
