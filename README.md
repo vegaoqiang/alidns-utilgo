@@ -15,6 +15,19 @@ alidns-utilgo -add -dn bar.foo.com -v 127.0.0.1
 ```
 > 默认的解析类型为A记录，可以通过--type=xx指定其他解析类型
 
+### -del --del
+***<font color=red>危险操作，谨慎使用</font>***<br>
+删除域名下的主机记录对应的解析记录，需和`-dn`一同使用.
++ 删除foo.com域名下bar主机记录对应的所有解析记录
+```
+alidns-utilgo -del -dn bar.foo.com
+```
++ 删除foo.com域名下bar主机记录对应的CNAME解析记录
+```
+alidns-utilgo -del -dn bar.foo.com -t CNAME
+```
+> <font color=Orange>删除主机记录时，如果未通过-t指定解析类型，将会删除该主机记录的所有解析类型。例如：bar记录同时存在MX,A,CNAME这三种解析类型，如未指定其中之一，将全部删除所有解析类型。</font>
+
 ### -list --list 
 默认列出账户中所有的域名，当同时指定`-dn`，如`-dn=bar.foo.com`，将列出域名`foo.com`的`bar`解析详细信息，如果`-dn=foo.com`,则会列出`foo.com`域名下的所有解析。同时，`--list`还支持通过同时添加`--search`参数指定搜索关键字，按照`“%KeyWord%”`模式搜索，不区分大小写。`search`参数功能根据是否指定了`-dn`而不同,未同时指定`-dn`, 则`search`参数值搜索域名列表，同时指定了`-dn`,则`search`参数值在指定的`dn`下搜索所有相近的解析。注意：`-dn`的参数值应当为`foo.com`类型，如果未`bar.foo.com`,`search`参数值优先级高于`bar`,优先根据`search`参数值进行搜索`foo.com`下所有相近的解析. 当对某个域名下的所有解析进行搜索时, `search`参数值可以是域名解析的`Type`,`RR`,`Value`.
 + 列出账户中所有域名
