@@ -15,7 +15,9 @@ var (
 	Init		bool
 	Add			bool
 	Del			bool
+	Update		bool
 	List		bool
+	U			string
 	DN 	   		string
 	Type	   	string
 	Value	   	string
@@ -30,7 +32,9 @@ func init(){
 	flag.BoolVar(&Init, "init", false, "初始化账户配置")
 	flag.BoolVar(&Add, "add", false, "添加解析")
 	flag.BoolVar(&Del, "del", false, "删除解析")
+	flag.BoolVar(&Update, "update", false, "更新域名解析")
 	flag.BoolVar(&List, "list", false, "获取域名所有解析")
+	flag.StringVar(&U, "u", "", "需要更新的字段已经值，如：-u value=bar将修改解析主机记录为bar，多个字段值以,分割")
 	flag.StringVar(&DN, "dn", "", "需要解析的完整域名, 如: bar.foo.com, 当指定--list参数时，dn为不包含'主机记录'的域名时，如：foo.com， 则获取所有该域名的解析记录")
 	flag.StringVar(&Type, "type", "A", "解析记录类型,参见:https://help.aliyun.com/document_detail/29805.html?spm=api-workbench.API%20Document.0.0.4fbd1e0fFdFBGG")
 	flag.StringVar(&Type, "t", "A", "与--type相同")
@@ -68,6 +72,26 @@ func main(){
 		}else {
 			fmt.Println(result)
 			//todo: 优化展示信息
+		}
+	}
+	if Update {
+		ldrconfig := beforeUpdateDomainRecordConfig()
+		result, err := ldrconfig.ListDomainRecords(client)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		// 得到目标子域名RecordId
+		if *result.Body.TotalCount == 0 {
+			fmt.Printf("未查找到主机记录为: %v, 解析类型为: %v 的解析记录\n",DN, Type)
+			os.Exit(1)
+		}
+		RecordId := result.Body.DomainRecords.Record[0].RecordId
+		if result, err := initUpdateDomainRecordConfig(ldrconfig).UpdateDomainRecords(client, RecordId); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}else {
+			fmt.Println(result)
 		}
 	}
 	if List {
@@ -161,6 +185,64 @@ func initDelSubDomainRecordsConfig() *aliutils.DomainConfig {
 		Type: 		Type,
 	}
 	return dsdrconfig
+}
+
+// 根据用户提供的DN确定更新目标子域名
+func beforeUpdateDomainRecordConfig() *aliutils.ListDomainConfig {
+	if len(DN) == 0 {
+		fmt.Println("请输入完整的子域名，如: bar.foo.com")
+		os.Exit(1)
+	}
+	if len(U) == 0 {
+		fmt.Println("请指定需要更新的字段和值，如value=bar")
+		os.Exit(1)
+	}
+	dn := strings.Split(DN, ".")
+	if len(dn) <= 2 {
+		fmt.Println("请输入完整的子域名，如: bar.foo.com")
+		os.Exit(1)
+	}
+	// 由于查找的子域名必须精确，设置搜索模式为EXACT，并设置搜索关键字KeyWord进行精确查找，RRKeyWord在查找中将不起作用
+	ldrconfig := &aliutils.ListDomainConfig{
+		DomainName: 	strings.Join(dn[len(dn) - 2:], "."),
+		RRKeyWord:		strings.Join(dn[:len(dn) - 2], "."),
+		KeyWord: 		strings.Join(dn[:len(dn) - 2], "."),
+		TypeKeyWord: 	Type,
+		ValueKeyWord: 	Value,
+		SearchMode:		"EXACT",
+	}
+	return ldrconfig
+}
+
+// 初始化更新域名解析参数配置
+func initUpdateDomainRecordConfig(ldrconfig *aliutils.ListDomainConfig) *aliutils.DomainConfig {
+	u := strings.Split(U, ",")
+	udrconfig := &aliutils.DomainConfig{}
+	for _, kv := range u {
+		if !strings.Contains(kv, "=") || strings.Count(kv, "=") > 1 {
+			fmt.Println("需要更新的字段和值输入格式错误")
+			os.Exit(1)
+		}
+		kvArray := strings.Split(kv, "=")
+		if strings.ToTitle(kvArray[0]) == "RR" {
+			udrconfig.RR = kvArray[1]
+		}else if strings.ToTitle(kvArray[0]) == "VALUE" {
+			udrconfig.Value = kvArray[1]
+		}else if strings.ToTitle(kvArray[0]) == "TYPE" {
+			udrconfig.Type = kvArray[1]
+		}
+	}
+	// 检查各项参数是否为空，将空设置为默认值
+	if len(udrconfig.RR) == 0 {
+		udrconfig.RR = ldrconfig.RRKeyWord
+	}
+	if len(udrconfig.Value) == 0 {
+		udrconfig.Value = ldrconfig.ValueKeyWord
+	}
+	if len(udrconfig.Type) == 0 {
+		udrconfig.Type = ldrconfig.TypeKeyWord
+	}
+	return udrconfig
 }
 
 func checkDn() (*aliutils.ListDomainConfig, error) {

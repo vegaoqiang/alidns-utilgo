@@ -25,6 +25,7 @@ type ListDomainConfig struct {
 	RRKeyWord		string
 	TypeKeyWord 	string
 	ValueKeyWord 	string
+	SearchMode		string
 	PageSize		string
 }
 
@@ -65,6 +66,7 @@ func (ldrconfig *ListDomainConfig) ListDomainRecords(client *alidns.Client) (res
 		TypeKeyWord: 	tea.String(ldrconfig.TypeKeyWord),
 		ValueKeyWord: 	tea.String(ldrconfig.ValueKeyWord),
 		KeyWord:		tea.String(ldrconfig.KeyWord),
+		SearchMode: 	tea.String(ldrconfig.SearchMode),
 		PageSize:		tea.Int64(500),
 	}
 	result, err = client.DescribeDomainRecords(describeDomainRecordsRequest)
@@ -90,4 +92,15 @@ func (dsdrconfig *DomainConfig) DelSubDomainRecords(client *alidns.Client) (resu
 	}
 	result, err = client.DeleteSubDomainRecords(delSubDomainRecordsRequest)
 	return result, err
+}
+
+// 更新域名解析
+func (udrconfig *DomainConfig) UpdateDomainRecords(client *alidns.Client, RecordId *string) (result *alidns.UpdateDomainRecordResponse, err error) {
+	updateDomainRecordRequest := &alidns.UpdateDomainRecordRequest{
+		RecordId: 	tea.String(*RecordId),
+		RR: 		tea.String(udrconfig.RR),
+		Type: 		tea.String(udrconfig.Type),
+		Value: 		tea.String(udrconfig.Value),
+	}
+	return client.UpdateDomainRecord(updateDomainRecordRequest)
 }
