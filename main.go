@@ -86,6 +86,10 @@ func main(){
 			fmt.Printf("未查找到主机记录为: %v, 解析类型为: %v 的解析记录\n",DN, Type)
 			os.Exit(1)
 		}
+		if *result.Body.TotalCount > 1 {
+			fmt.Printf("根据提供的DN: %v 查找多过个解析记录,请使用-t参数指定解析记录类型尝试确定一个解析记录",DN)
+			os.Exit(1)
+		}
 		RecordId := result.Body.DomainRecords.Record[0].RecordId
 		if result, err := initUpdateDomainRecordConfig(ldrconfig).UpdateDomainRecords(client, RecordId); err != nil {
 			fmt.Println(err)
