@@ -100,7 +100,7 @@ func main(){
 // 初始化域名对应的配置文件，提供一个域名解析的全部必要字段
 func initDomainConfig() *aliutils.DomainConfig{
 	if len(DN) == 0 {
-		fmt.Println("请指定完整域名，如: bar.foo.com")
+		fmt.Println("请输入完整的子域名，如: bar.foo.com")
 		os.Exit(1)
 	}
 	// if len(Type) == 0 {
@@ -116,17 +116,14 @@ func initDomainConfig() *aliutils.DomainConfig{
 		fmt.Println("提供的IP地址不合法")
 		os.Exit(1)
 	}
-	dn := strings.SplitN(DN, ".", 2)
-	if domainLen := len(strings.Split(dn[1], ".")); domainLen < 2 {
-		// 默认dn[0]为三级域名，dn[1]为二级域名，验证dn[1]是否由一个"."组成
-		// 如果dn[1]不包含一个".",则用户提供的DN不是一个合法的参数,如用户提供
-		// foo.com，去掉dn[0],则dn[1]为com，则该DN不合法
-		fmt.Printf("提供的DN参数%v不正确，请按照如下：bar.foo.com提供", DN)
+	dn := strings.Split(DN, ".")
+	if len(dn) <= 2 {
+		fmt.Println("请输入完整的子域名，如: bar.foo.com")
 		os.Exit(1)
 	}
 	dnconfig := &aliutils.DomainConfig{
-		RR: 		dn[0],
-		DomainName: dn[1],
+		RR: 		strings.Join(dn[:len(dn) - 2], "."),
+		DomainName: strings.Join(dn[len(dn) - 2:], "."),
 		Type: 		Type,
 		Value: 		Value,	
 	}
@@ -152,13 +149,12 @@ func initDelSubDomainRecordsConfig() *aliutils.DomainConfig {
 		fmt.Println("请输入完整的子域名，如: bar.foo.com")
 		os.Exit(1)
 	}
-	if len(strings.Split(DN, ".")) <= 2 {
+	dn := strings.Split(DN, ".")
+	if len(dn) <= 2 {
 		fmt.Println("请输入完整的子域名，如: bar.foo.com")
 		os.Exit(1)
 	}
-	//dn := strings.SplitN(DN, ".", 2)
 	// 将用户提供的DN按照'.'进行分割成数组，默认数组的最后两个元素为域名(即一级域名和二级域名)，其余的为子域名
-	dn := strings.Split(DN, ".")
 	dsdrconfig := &aliutils.DomainConfig{
 		DomainName: strings.Join(dn[len(dn) - 2:], "."),
 		RR: 		strings.Join(dn[:len(dn) - 2], "."),
@@ -171,12 +167,12 @@ func checkDn() (*aliutils.ListDomainConfig, error) {
 	domianLen := len(strings.Split(DN, "."))
 	if domianLen >= 3 {
 		// 此时的域名类型bar.foo.com
-		dn := strings.SplitN(DN, ".", 2)
+		dn := strings.Split(DN, ".")
 		if len(Search) == 0 {
 			// 用户未指定search
 			ldnconfig := &aliutils.ListDomainConfig{
-				RRKeyWord: 		dn[0],
-				DomainName: 	dn[1],
+				RRKeyWord: 		strings.Join(dn[:len(dn) - 2], "."),
+				DomainName: 	strings.Join(dn[len(dn) - 2:], "."),
 				TypeKeyWord: 	Type,
 				ValueKeyWord: 	Value,
 			}
@@ -184,8 +180,8 @@ func checkDn() (*aliutils.ListDomainConfig, error) {
 		}else{
 			// 用户指定了search
 			ldnconfig := &aliutils.ListDomainConfig{
-				RRKeyWord: 		dn[0], // 所搜时将失效
-				DomainName: 	dn[1],
+				RRKeyWord: 		strings.Join(dn[:len(dn) - 2], "."), // 所搜时将失效
+				DomainName: 	strings.Join(dn[len(dn) - 2:], "."),
 				TypeKeyWord: 	Type,
 				ValueKeyWord: 	Value,
 				KeyWord: 		Search,
