@@ -28,6 +28,7 @@ type ListDomainConfig struct {
 	PageSize		string
 }
 
+// 初始化一个alidns客户端
 func (account *Account) CreateClient() (result *alidns.Client, err error) {
 	config := &openapi.Config{
 		// 您的AccessKey ID
@@ -40,6 +41,7 @@ func (account *Account) CreateClient() (result *alidns.Client, err error) {
 	return result, err
 }
 
+// 添加一个新的主机解析记录
 func (dnconfig *DomainConfig) AddDomainRecord(client *alidns.Client) (err error) {
 		addDomainRecordRequest := &alidns.AddDomainRecordRequest{
 		DomainName: tea.String(dnconfig.DomainName),
@@ -55,28 +57,31 @@ func (dnconfig *DomainConfig) AddDomainRecord(client *alidns.Client) (err error)
 	return err
 }
 
-func (ldnconfig *ListDomainConfig) ListDomainRecord(client *alidns.Client) (result *alidns.DescribeDomainRecordsResponse, err error){
+// 列出域名下所有主机解析记录
+func (ldrconfig *ListDomainConfig) ListDomainRecords(client *alidns.Client) (result *alidns.DescribeDomainRecordsResponse, err error){
 	describeDomainRecordsRequest := &alidns.DescribeDomainRecordsRequest{
-		DomainName: 	tea.String(ldnconfig.DomainName),
-		RRKeyWord: 		tea.String(ldnconfig.RRKeyWord),
-		TypeKeyWord: 	tea.String(ldnconfig.TypeKeyWord),
-		ValueKeyWord: 	tea.String(ldnconfig.ValueKeyWord),
-		KeyWord:		tea.String(ldnconfig.KeyWord),
+		DomainName: 	tea.String(ldrconfig.DomainName),
+		RRKeyWord: 		tea.String(ldrconfig.RRKeyWord),
+		TypeKeyWord: 	tea.String(ldrconfig.TypeKeyWord),
+		ValueKeyWord: 	tea.String(ldrconfig.ValueKeyWord),
+		KeyWord:		tea.String(ldrconfig.KeyWord),
 		PageSize:		tea.Int64(500),
 	}
 	result, err = client.DescribeDomainRecords(describeDomainRecordsRequest)
 	return result, err
 }
 
-func (ldnconfig *ListDomainConfig) ListDomain(client *alidns.Client) (result *alidns.DescribeDomainsResponse, err error) {
+// 列出账户下所有域名
+func (ldconfig *ListDomainConfig) ListDomains(client *alidns.Client) (result *alidns.DescribeDomainsResponse, err error) {
 	describeDomainsRequest := &alidns.DescribeDomainsRequest{
-		KeyWord: tea.String(ldnconfig.KeyWord),
+		KeyWord: tea.String(ldconfig.KeyWord),
 		PageSize: tea.Int64(100),
 	}
 	result, err = client.DescribeDomains(describeDomainsRequest)
 	return result, err
 }
 
+// 删除域名主机记录对应的解析记录
 func (dsdrconfig *DomainConfig) DelSubDomainRecords(client *alidns.Client) (result *alidns.DeleteSubDomainRecordsResponse, err error) {
 	delSubDomainRecordsRequest := &alidns.DeleteSubDomainRecordsRequest{
 		DomainName: tea.String(dsdrconfig.DomainName),

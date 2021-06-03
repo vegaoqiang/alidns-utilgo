@@ -45,7 +45,6 @@ func init(){
 	flag.StringVar(&Config, "c", "", "与--config相同")
 }
 
-
 func main(){
 	flag.Parse()
 	if Init {
@@ -68,33 +67,37 @@ func main(){
 			os.Exit(1)
 		}else {
 			fmt.Println(result)
+			//todo: 优化展示信息
 		}
 	}
 	if List {
-		ldnconfig, err := initListDomainConfig()
+		ldconfig, err := initListDomainConfig()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 		if len(DN) != 0 {
-			if result, err := ldnconfig.ListDomainRecord(client); err != nil {
+			if result, err := ldconfig.ListDomainRecords(client); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}else{
 				fmt.Println(result.Body.DomainRecords.Record)
+				//todo: 优化展示信息
 			}
 		}else{
-			if result, err := ldnconfig.ListDomain(client); err != nil {
+			if result, err := ldconfig.ListDomains(client); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}else {
 				fmt.Println(result)
+				//todo: 优化展示信息
 			}
 		}
 		
 	}
 }
 
+// 初始化域名对应的配置文件，提供一个域名解析的全部必要字段
 func initDomainConfig() *aliutils.DomainConfig{
 	if len(DN) == 0 {
 		fmt.Println("请指定完整域名，如: bar.foo.com")
@@ -135,14 +138,15 @@ func initDomainConfig() *aliutils.DomainConfig{
 func initListDomainConfig() (*aliutils.ListDomainConfig, error) {
 	if len(DN) == 0 {
 		// 用户未指定DN，该情况将查询域名列表，同时可提供搜索关键字
-		ldnconfig := &aliutils.ListDomainConfig{
+		ldconfig := &aliutils.ListDomainConfig{
 			KeyWord: Search,
 		}
-		return ldnconfig, nil
+		return ldconfig, nil
 	}
 	return checkDn()
 }
 
+// 初始化删除主机记录对应的解析记录的参数配置
 func initDelSubDomainRecordsConfig() *aliutils.DomainConfig {
 	if len(DN) == 0 {
 		fmt.Println("请输入完整的子域名，如: bar.foo.com")
