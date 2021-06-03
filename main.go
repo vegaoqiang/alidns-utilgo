@@ -62,6 +62,14 @@ func main(){
 		}
 		//todo: 展示成功解析的域名信息
 	}
+	if Del {
+		if result, err := initDelSubDomainRecordsConfig().DelSubDomainRecords(client); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}else {
+			fmt.Println(result)
+		}
+	}
 	if List {
 		ldnconfig, err := initListDomainConfig()
 		if err != nil {
@@ -133,52 +141,27 @@ func initListDomainConfig() (*aliutils.ListDomainConfig, error) {
 		return ldnconfig, nil
 	}
 	return checkDn()
-	// domianLen := len(strings.Split(DN, "."))
-	// if domianLen >= 3 {
-	// 	// 此时的域名类型bar.foo.com
-	// 	dn := strings.SplitN(DN, ".", 2)
-	// 	if len(Search) == 0 {
-	// 		// 用户未指定search
-	// 		ldnconfig := &aliutils.ListDomainConfig{
-	// 			RRKeyWord: 		dn[0],
-	// 			DomainName: 	dn[1],
-	// 			TypeKeyWord: 	Type,
-	// 			ValueKeyWord: 	Value,
-	// 		}
-	// 		return ldnconfig, nil
-	// 	}else{
-	// 		// 用户指定了search
-	// 		ldnconfig := &aliutils.ListDomainConfig{
-	// 			RRKeyWord: 		dn[0], // 所搜时将失效
-	// 			DomainName: 	dn[1],
-	// 			TypeKeyWord: 	Type,
-	// 			ValueKeyWord: 	Value,
-	// 			KeyWord: 		Search,
-	// 		}
-	// 		return ldnconfig, nil
-	// 	}
-	// }else if domianLen == 2 {
-	// 	// 此时的域名类型foo.com
-	// 	// 当用户此时未指定search关键字，将获取foo.com下所有的解析
-	// 	ldnconfig := &aliutils.ListDomainConfig{
-	// 		DomainName: 	DN,
-	// 		TypeKeyWord: 	Type,
-	// 		ValueKeyWord: 	Value,
-	// 		KeyWord: 		Search,
-	// 	}
-	// 	return ldnconfig, nil
-	// }
-	// return &aliutils.ListDomainConfig{}, fmt.Errorf("提供的域名%v不正确", DN)
 }
 
-// func initDelDomainConfig(){
-// 	if len(DN) == 0 {
-// 		fmt.Println("请指定完整域名解析，如: bar.foo.com")
-// 		os.Exit(1)
-// 	}
-// 	ldnconfig, err := checkDn()
-	
-// }
+func initDelSubDomainRecordsConfig() *aliutils.DomainConfig {
+	if len(DN) == 0 {
+		fmt.Println("请输入完整的子域名，如: bar.foo.com")
+		os.Exit(1)
+	}
+	if len(strings.Split(DN, ".")) <= 2 {
+		fmt.Println("请输入完整的子域名，如: bar.foo.com")
+		os.Exit(1)
+	}
+	//dn := strings.SplitN(DN, ".", 2)
+	// 将用户提供的DN按照'.'进行分割成数组，默认数组的最后两个元素为域名(即一级域名和二级域名)，其余的为子域名
+	dn := strings.Split(DN, ".")
+	dsdrconfig := &aliutils.DomainConfig{
+		DomainName: strings.Join(dn[len(dn) - 2:], "."),
+		RR: 		strings.Join(dn[:len(dn) - 2], "."),
+		Type: 		Type,
+	}
+	return dsdrconfig
+}
 
 func checkDn() (*aliutils.ListDomainConfig, error) {
 	domianLen := len(strings.Split(DN, "."))

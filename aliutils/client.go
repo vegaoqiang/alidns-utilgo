@@ -76,3 +76,13 @@ func (ldnconfig *ListDomainConfig) ListDomain(client *alidns.Client) (result *al
 	result, err = client.DescribeDomains(describeDomainsRequest)
 	return result, err
 }
+
+func (dsdrconfig *DomainConfig) DelSubDomainRecords(client *alidns.Client) (result *alidns.DeleteSubDomainRecordsResponse, err error) {
+	delSubDomainRecordsRequest := &alidns.DeleteSubDomainRecordsRequest{
+		DomainName: tea.String(dsdrconfig.DomainName),
+		RR: 		tea.String(dsdrconfig.RR),
+		Type: 		tea.String(dsdrconfig.Type),
+	}
+	result, err = client.DeleteSubDomainRecords(delSubDomainRecordsRequest)
+	return result, err
+}
