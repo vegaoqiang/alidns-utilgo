@@ -105,19 +105,27 @@ func main(){
 			os.Exit(1)
 		}
 		if len(DN) != 0 {
-			if result, err := ldconfig.ListDomainRecords(client); err != nil {
+			// if result, err := ldconfig.ListDomainRecords(client); err != nil {
+			if result, err := ldconfig.DoListDomainRecords(client); err != nil {	
 				fmt.Println(err)
 				os.Exit(1)
 			}else{
-				fmt.Println(result.Body.DomainRecords.Record)
-				//todo: 优化展示信息
+				fmt.Printf("域名: %s, 解析记录: %s\n", ldconfig.DomainName, "500")
+				fmt.Printf("%20s%20s%20s%20s%20s%20s%20s\n", "主机记录", "记录类型", "解析线路", "记录值", "TTL", "状态", "备注")
+				for _, v := range result {
+					if v.Remark == nil {
+						v.SetRemark(" ")
+					}
+					fmt.Printf("%20s%20s%20s%20s%20d%20s%20s\n", *v.RR, *v.Type, *v.Line, *v.Value, *v.TTL, *v.Status, *v.Remark)
+				}
+
 			}
 		}else{
 			if result, err := ldconfig.ListDomains(client); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}else {
-				fmt.Println(result)
+				fmt.Println(result.Body)
 				//todo: 优化展示信息
 			}
 		}
@@ -276,7 +284,7 @@ func checkDn() (*aliutils.ListDomainConfig, error) {
 		}
 	}else if domianLen == 2 {
 		// 此时的域名类型foo.com
-		// 当用户此时未指定search关键字，将获取foo.com下所有的解析
+		// 当用户此时未指定search关键字，将获取foo.com下所有的解析,注意：解析类型为A的所有解析
 		ldnconfig := &aliutils.ListDomainConfig{
 			DomainName: 	DN,
 			TypeKeyWord: 	Type,
@@ -387,3 +395,12 @@ func createAccountConfig(){
 	fmt.Println("初始化完成")
 	os.Exit(0)
 }
+
+// 格式化输出域名解析记录
+// func fmtPrintDomainRecords(result interface{}){
+// 	fmt.Printf("%T\n",result)
+// 	fmt.Println(result)
+// 	fmt.Printf("域名: %s, 解析记录: %s\n", "abc", "500")
+// 	fmt.Printf("%10s%10s%10s%10s%10s%10s%20s\n", "主机记录", "记录类型", "解析线路", "记录值", "TTL", "状态", "备注")
+
+// }

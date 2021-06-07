@@ -1,6 +1,8 @@
 package aliutils
 
 import (
+	// "fmt"
+
 	alidns "github.com/alibabacloud-go/alidns-20150109/client"
 	openapi "github.com/alibabacloud-go/darabonba-openapi/client"
 	"github.com/alibabacloud-go/tea/tea"
@@ -26,7 +28,8 @@ type ListDomainConfig struct {
 	TypeKeyWord 	string
 	ValueKeyWord 	string
 	SearchMode		string
-	PageSize		string
+	PageSize		int64
+	PageNumber		int64
 }
 
 // 初始化一个alidns客户端
@@ -68,6 +71,7 @@ func (ldrconfig *ListDomainConfig) ListDomainRecords(client *alidns.Client) (res
 		KeyWord:		tea.String(ldrconfig.KeyWord),
 		SearchMode: 	tea.String(ldrconfig.SearchMode),
 		PageSize:		tea.Int64(500),
+		PageNumber:     tea.Int64(ldrconfig.PageNumber),
 	}
 	result, err = client.DescribeDomainRecords(describeDomainRecordsRequest)
 	return result, err
@@ -104,3 +108,26 @@ func (udrconfig *DomainConfig) UpdateDomainRecords(client *alidns.Client, Record
 	}
 	return client.UpdateDomainRecord(updateDomainRecordRequest)
 }
+
+// 获取所有域名解析
+func (ldrconfig *ListDomainConfig) DoListDomainRecords(client *alidns.Client) ([]*alidns.DescribeDomainRecordsResponseBodyDomainRecordsRecord, error) {
+	var DomainRecords []*alidns.DescribeDomainRecordsResponseBodyDomainRecordsRecord
+	// set default page number, because default page number can not be 0
+	ldrconfig.PageNumber = 1
+	for {
+		result, err := ldrconfig.ListDomainRecords(client)
+		if err != nil {
+			return DomainRecords, err
+		}
+		DomainRecords = append(DomainRecords, result.Body.DomainRecords.Record...)
+		if  *result.Body.PageSize * *result.Body.PageNumber >= *result.Body.TotalCount {
+			return DomainRecords, nil
+		}
+		ldrconfig.PageNumber += 1
+	}
+}
+
+
+// func (dr *alidns.DescribeDomainRecordsResponseBodyDomainRecordsRecord) fmtPrintDomainRecords() {
+
+// }
