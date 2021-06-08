@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -110,15 +111,34 @@ func main(){
 				fmt.Println(err)
 				os.Exit(1)
 			}else{
-				fmt.Printf("域名: %s, 解析记录: %s\n", ldconfig.DomainName, "500")
-				fmt.Printf("%20s%20s%20s%20s%20s%20s%20s\n", "主机记录", "记录类型", "解析线路", "记录值", "TTL", "状态", "备注")
+				fmt.Printf("\033[33m域名: %s, 解析记录: %d\033[0m\n", ldconfig.DomainName, len(result))
+				fmt.Printf("%-30s%-10s%-20s%-20s%-10s%-20s%-20s\n", "主机记录", "记录类型", "解析线路", "记录值", "TTL", "状态", "备注")
 				for _, v := range result {
 					if v.Remark == nil {
 						v.SetRemark(" ")
 					}
-					fmt.Printf("%20s%20s%20s%20s%20d%20s%20s\n", *v.RR, *v.Type, *v.Line, *v.Value, *v.TTL, *v.Status, *v.Remark)
+					// 格式化输出，将一下输出内容同上面的标题对其
+					// 4: 标题长度
+					// 30: 标题占位符长度
+					// len(xx): 内容长度
+					// NullLength: 通过公式计算得出内容需要加上NullLength个空字符才能填满占位符
+					RRNullLength := 4 + 30 - len(*v.RR)
+					if RRNullLength < 0 {
+						RRNullLength = 0
+					}
+					fmt.Printf("%-30s", *v.RR + strings.Repeat(" ", RRNullLength))
+					TypeNullLength := 4 + 10 - len(*v.Type)
+					fmt.Printf("%-10s", *v.Type + strings.Repeat(" ", TypeNullLength))
+					LineNullLength := 4 + 20 - len(*v.Line)
+					fmt.Printf("%-20s", *v.Line + strings.Repeat(" ", LineNullLength))
+					ValueNullLength := 3 + 20 - len(*v.Value)
+					fmt.Printf("%-20s", *v.Value + strings.Repeat(" ", ValueNullLength))
+					TTLNullLength := 10 - len(strconv.FormatInt(*v.TTL, 10))
+					fmt.Printf("%-10s", strconv.FormatInt(*v.TTL, 10) + strings.Repeat(" ", TTLNullLength))
+					StatusNullLength := 2 + 20 - len(*v.Status)
+					fmt.Printf("%-20s", *v.Status + strings.Repeat(" ", StatusNullLength))
+					fmt.Printf("%-20s\n", *v.Remark)
 				}
-
 			}
 		}else{
 			if result, err := ldconfig.ListDomains(client); err != nil {
@@ -395,12 +415,3 @@ func createAccountConfig(){
 	fmt.Println("初始化完成")
 	os.Exit(0)
 }
-
-// 格式化输出域名解析记录
-// func fmtPrintDomainRecords(result interface{}){
-// 	fmt.Printf("%T\n",result)
-// 	fmt.Println(result)
-// 	fmt.Printf("域名: %s, 解析记录: %s\n", "abc", "500")
-// 	fmt.Printf("%10s%10s%10s%10s%10s%10s%20s\n", "主机记录", "记录类型", "解析线路", "记录值", "TTL", "状态", "备注")
-
-// }
