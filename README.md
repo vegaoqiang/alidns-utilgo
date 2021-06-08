@@ -1,3 +1,24 @@
+# alidns-utilgo
+阿里DNS命令行工具，支持对阿里云域名解析记录的添加，修改，删除和查询
+## 安装
+目前仅支持在类Unix平台运行，不支持Windows
+### 下载二进制文件
+```
+chmod +x alidns-utilgo
+```
+
+### 自行编译
++ Linux可执行文件
+```
+CGO_ENABLED=0  GOOS=linux  GOARCH=amd64  go build main.go -o alidns-utilgo
+```
+
++ macOs可执行文件
+```
+CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64  go build main.go -o alidns-utilgo
+```
+
+## 使用方法
 ### -init --init
 初始化账户信息，输入的access_key, access_secret和region并写入到文件，你也可以手动在当前用户home目录下创建`$HOME/.alidns-utilgo/config.json`文件并写入如下内容
 ```
