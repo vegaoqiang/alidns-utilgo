@@ -31,8 +31,8 @@ var (
 
 func init(){
 	flag.BoolVar(&Init, "init", false, "初始化账户配置")
-	flag.BoolVar(&Add, "add", false, "添加解析")
-	flag.BoolVar(&Del, "del", false, "删除解析")
+	flag.BoolVar(&Add, "add", false, "添加解析记录")
+	flag.BoolVar(&Del, "del", false, "删除解析记录")
 	flag.BoolVar(&Update, "update", false, "更新域名解析")
 	flag.BoolVar(&List, "list", false, "获取域名所有解析")
 	flag.StringVar(&U, "u", "", "需要更新的字段已经值，如：-u value=bar将修改解析主机记录为bar，多个字段值以,分割")
@@ -61,18 +61,28 @@ func main(){
 		os.Exit(1)
 	}
 	if Add {
-		if err := initDomainConfig().AddDomainRecord(client); err != nil {
+		adrconfig := initDomainConfig()
+		if err := adrconfig.AddDomainRecord(client); err != nil {
 			fmt.Println("添加解析失败：", err)
 		}
-		//todo: 展示成功解析的域名信息
+		// 输出添加解析记录成功信息
+		fmt.Printf("域名:    %s\n", adrconfig.DomainName)
+		fmt.Printf("记录类型: %s\n", adrconfig.Type)
+		fmt.Printf("主机记录: %s\n", adrconfig.RR)
+		fmt.Printf("记录值:   %s\n", adrconfig.Value)
 	}
 	if Del {
-		if result, err := initDelSubDomainRecordsConfig().DelSubDomainRecords(client); err != nil {
+		dsdrconfig := initDelSubDomainRecordsConfig()
+		if result, err := dsdrconfig.DelSubDomainRecords(client); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}else {
-			fmt.Println(result)
-			//todo: 优化展示信息
+			// 输出删除解析记录成功信息
+			fmt.Printf("\033[33m已删除解析记录个数: %s\033[0m\n", *result.Body.TotalCount)
+			fmt.Printf("域名:%s\n", dsdrconfig.DomainName)
+			fmt.Printf("记录类型: %s\n", dsdrconfig.Type)
+			fmt.Printf("主机记录: %s\n", dsdrconfig.RR)
+			fmt.Printf("记录值:   %s\n", dsdrconfig.Value)
 		}
 	}
 	if Update {
@@ -92,11 +102,16 @@ func main(){
 			os.Exit(1)
 		}
 		RecordId := result.Body.DomainRecords.Record[0].RecordId
-		if result, err := initUpdateDomainRecordConfig(ldrconfig).UpdateDomainRecords(client, RecordId); err != nil {
+		udrconfig := initUpdateDomainRecordConfig(ldrconfig)
+		if result, err := udrconfig.UpdateDomainRecords(client, RecordId); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}else {
 			fmt.Println(result)
+			fmt.Printf("域名:%s\n", ldrconfig.DomainName)
+			fmt.Printf("记录类型: %-20s %s %s\n", ldrconfig.TypeKeyWord, "->", udrconfig.Type)
+			fmt.Printf("主机记录: %-20s %s %s\n", ldrconfig.RRKeyWord, "->", udrconfig.RR)
+			fmt.Printf("记录值:   %-20s %s %s\n", ldrconfig.ValueKeyWord, "->", udrconfig.Value)
 		}
 	}
 	if List {
@@ -181,8 +196,7 @@ func initDomainConfig() *aliutils.DomainConfig{
 		os.Exit(1)
 	}
 	// if len(Type) == 0 {
-	// 	fmt.Println("请指定解析记录类型")
-	// 	os.Exit(1)
+	// 	Type = "A"
 	// }
 	if len(Value) == 0 {
 		fmt.Println("请指定记录值")
@@ -263,6 +277,7 @@ func beforeUpdateDomainRecordConfig() *aliutils.ListDomainConfig {
 		TypeKeyWord: 	Type,
 		ValueKeyWord: 	Value,
 		SearchMode:		"EXACT",
+		PageNumber: 	1,
 	}
 	return ldrconfig
 }
