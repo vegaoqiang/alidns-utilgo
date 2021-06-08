@@ -61,7 +61,7 @@ func (dnconfig *DomainConfig) AddDomainRecord(client *alidns.Client) (err error)
 	return err
 }
 
-// 列出域名下所有主机解析记录
+// 根据参数列出域名主机解析记录
 func (ldrconfig *ListDomainConfig) ListDomainRecords(client *alidns.Client) (result *alidns.DescribeDomainRecordsResponse, err error){
 	describeDomainRecordsRequest := &alidns.DescribeDomainRecordsRequest{
 		DomainName: 	tea.String(ldrconfig.DomainName),
@@ -77,7 +77,7 @@ func (ldrconfig *ListDomainConfig) ListDomainRecords(client *alidns.Client) (res
 	return result, err
 }
 
-// 列出账户下所有域名
+// 根据参数列出账户下域名
 func (ldconfig *ListDomainConfig) ListDomains(client *alidns.Client) (result *alidns.DescribeDomainsResponse, err error) {
 	describeDomainsRequest := &alidns.DescribeDomainsRequest{
 		KeyWord: tea.String(ldconfig.KeyWord),
@@ -127,7 +127,19 @@ func (ldrconfig *ListDomainConfig) DoListDomainRecords(client *alidns.Client) ([
 	}
 }
 
-
-// func (dr *alidns.DescribeDomainRecordsResponseBodyDomainRecordsRecord) fmtPrintDomainRecords() {
-
-// }
+// 获取账户下所有域名
+func (ldconfig *ListDomainConfig) DoListDomains(client *alidns.Client) ([]*alidns.DescribeDomainsResponseBodyDomainsDomain, error) {
+	var Domains []*alidns.DescribeDomainsResponseBodyDomainsDomain
+	ldconfig.PageNumber = 1
+	for {
+		result, err := ldconfig.ListDomains(client)
+		if err != nil {
+			return Domains, err
+		}
+		Domains = append(Domains, result.Body.Domains.Domain...)
+		if  *result.Body.PageSize * *result.Body.PageNumber >= *result.Body.TotalCount {
+			return Domains, nil
+		}
+		ldconfig.PageNumber += 1
+	}
+}

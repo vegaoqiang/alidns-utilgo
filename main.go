@@ -106,7 +106,6 @@ func main(){
 			os.Exit(1)
 		}
 		if len(DN) != 0 {
-			// if result, err := ldconfig.ListDomainRecords(client); err != nil {
 			if result, err := ldconfig.DoListDomainRecords(client); err != nil {	
 				fmt.Println(err)
 				os.Exit(1)
@@ -117,7 +116,7 @@ func main(){
 					if v.Remark == nil {
 						v.SetRemark(" ")
 					}
-					// 格式化输出，将一下输出内容同上面的标题对其
+					// 格式化输出，将以下输出内容同上面的标题对其
 					// 4: 标题长度
 					// 30: 标题占位符长度
 					// len(xx): 内容长度
@@ -141,12 +140,34 @@ func main(){
 				}
 			}
 		}else{
-			if result, err := ldconfig.ListDomains(client); err != nil {
+			// 获取账户下所有域名
+			// if result, err := ldconfig.ListDomains(client); err != nil {
+				if result, err := ldconfig.DoListDomains(client); err != nil {	
 				fmt.Println(err)
 				os.Exit(1)
 			}else {
-				fmt.Println(result.Body)
-				//todo: 优化展示信息
+				// 格式化输出
+				fmt.Printf("%-30s%-20s%-10s%-10s\n", "域名", "标签", "记录数", "创建时间")
+				for _, v := range result {
+					DRNullLength := 2 + 30 - len(*v.DomainName)
+					if DRNullLength < 0 {
+						DRNullLength = 0
+					}
+					fmt.Printf("%-30s", *v.DomainName + strings.Repeat(" ", DRNullLength))
+					var tags []string
+					for _, v := range v.Tags.Tag {
+						tags = append(tags, *v.Key)
+					}
+					tagsString := strings.Join(tags, ",")
+					TagNullLength := 2 + 20 - len(tagsString)
+					if TagNullLength < 0 {
+						TagNullLength = 0
+					}
+					fmt.Printf("%-20s", tagsString + strings.Repeat(" ", TagNullLength))
+					RecordCountNullLength := 3 + 10 -len(strconv.FormatInt(*v.RecordCount, 10))
+					fmt.Printf("%-10s", strconv.FormatInt(*v.RecordCount, 10) + strings.Repeat(" ", RecordCountNullLength))
+					fmt.Printf("%-10s\n", *v.CreateTime)
+				}
 			}
 		}
 		
