@@ -3,6 +3,7 @@ package main
 import (
 	"alidns-utilgo/aliutils"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -55,7 +56,13 @@ func main(){
 	if Init {
 		createAccountConfig()
 	}
-	client, err := initAccountConfig().CreateClient()
+	accountConfig, err := initAccountConfig()
+	if err != nil {
+		fmt.Println(err)
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+	client, err := accountConfig.CreateClient()
 	if err != nil {
 		fmt.Println("初始化客户端失败", err)
 		os.Exit(1)
@@ -369,7 +376,7 @@ func checkDn() (*aliutils.ListDomainConfig, error) {
 }
 
 // 	初始化账户信息，优先从命令行获取，命令行未指定则从配置文件中获取
-func initAccountConfig() *aliutils.Account {
+func initAccountConfig() (*aliutils.Account, error) {
 	accountConfig := &aliutils.Account{}
 	if len(AccessKey) != 0 {
 		accountConfig.AccessKey = AccessKey
@@ -388,36 +395,37 @@ func initAccountConfig() *aliutils.Account {
 			home := os.Getenv("HOME")
 			configFile = home + "/.alidns-utilgo/config.json"
 		}
-		accountConfig = loadAccountConfig(configFile)
+		ac, err := loadAccountConfig(configFile)
+		if err != nil {
+			return ac, err
+		}
+		accountConfig = ac
 	}
 	if len(accountConfig.AccessKey) == 0 {
-		fmt.Println("请提供access_key")
-		os.Exit(1)
+		return accountConfig, errors.New("请提供access_key")
 	}
 	if len(accountConfig.AccessSecret) == 0 {
-		fmt.Println("请提供access_secret")
-		os.Exit(1)
+		return accountConfig, errors.New("请提供access_secret")
 	}
 	if len(accountConfig.Region) == 0 {
-		fmt.Println("请提供region")
-		os.Exit(1)
+		return accountConfig, errors.New("请提供region")
 	}
-	return accountConfig
+	return accountConfig, nil
 }
 
 // 从配置文件中读取账户信息
-func loadAccountConfig(config string) *aliutils.Account {
+func loadAccountConfig(config string) (*aliutils.Account, error) {
 	bytes, err := ioutil.ReadFile(config)
 	if err != nil {
-		fmt.Println("指定的配置文件不存在:", config)
-		os.Exit(1)
+		err := fmt.Sprintf("指定的配置文件不存在:%v\n", config)
+		return &aliutils.Account{}, errors.New(err)
 	}
 	account := &aliutils.Account{}
 	if err := json.Unmarshal(bytes, account); err != nil {
-		fmt.Printf("解析配置文件发生错误:%v\n", config)
-		os.Exit(1)
+		err := fmt.Sprintf("解析配置文件发生错误:%v\n", config)
+		return account, errors.New(err)
 	}
-	return account
+	return account, nil
 }
 
 func createAccountConfig(){
