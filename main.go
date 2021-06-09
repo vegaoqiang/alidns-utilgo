@@ -37,8 +37,8 @@ func init(){
 	flag.BoolVar(&List, "list", false, "获取域名所有解析")
 	flag.StringVar(&U, "u", "", "需要更新的字段已经值，如：-u value=bar将修改解析主机记录为bar，多个字段值以,分割")
 	flag.StringVar(&DN, "dn", "", "需要解析的完整域名, 如: bar.foo.com, 当指定--list参数时，dn为不包含'主机记录'的域名时，如：foo.com， 则获取所有该域名的解析记录")
-	flag.StringVar(&Type, "type", "A", "解析记录类型,参见:https://help.aliyun.com/document_detail/29805.html?spm=api-workbench.API%20Document.0.0.4fbd1e0fFdFBGG")
-	flag.StringVar(&Type, "t", "A", "与--type相同")
+	flag.StringVar(&Type, "type", "", "解析记录类型,default A,参见:https://help.aliyun.com/document_detail/29805.html?spm=api-workbench.API%20Document.0.0.4fbd1e0fFdFBGG")
+	flag.StringVar(&Type, "t", "", "与--type相同")
 	flag.StringVar(&Value, "value", "", "解析记录值")
 	flag.StringVar(&Value, "v", "", "与--value相同")
 	flag.StringVar(&Search, "search", "", "指定搜索域名解析的关键字")
@@ -64,12 +64,14 @@ func main(){
 		adrconfig := initDomainConfig()
 		if err := adrconfig.AddDomainRecord(client); err != nil {
 			fmt.Println("添加解析失败：", err)
+			os.Exit(1)
 		}
 		// 输出添加解析记录成功信息
 		fmt.Printf("域名:    %s\n", adrconfig.DomainName)
 		fmt.Printf("记录类型: %s\n", adrconfig.Type)
 		fmt.Printf("主机记录: %s\n", adrconfig.RR)
 		fmt.Printf("记录值:   %s\n", adrconfig.Value)
+		os.Exit(0)
 	}
 	if Del {
 		dsdrconfig := initDelSubDomainRecordsConfig()
@@ -84,6 +86,7 @@ func main(){
 			fmt.Printf("主机记录: %s\n", dsdrconfig.RR)
 			fmt.Printf("记录值:   %s\n", dsdrconfig.Value)
 		}
+		os.Exit(0)
 	}
 	if Update {
 		ldrconfig := beforeUpdateDomainRecordConfig()
@@ -113,6 +116,7 @@ func main(){
 			fmt.Printf("主机记录: %-20s %s %s\n", ldrconfig.RRKeyWord, "->", udrconfig.RR)
 			fmt.Printf("记录值:   %-20s %s %s\n", ldrconfig.ValueKeyWord, "->", udrconfig.Value)
 		}
+		os.Exit(0)
 	}
 	if List {
 		ldconfig, err := initListDomainConfig()
@@ -146,6 +150,9 @@ func main(){
 					LineNullLength := 4 + 20 - len(*v.Line)
 					fmt.Printf("%-20s", *v.Line + strings.Repeat(" ", LineNullLength))
 					ValueNullLength := 3 + 20 - len(*v.Value)
+					if ValueNullLength < 0 {
+						ValueNullLength = 0
+					}
 					fmt.Printf("%-20s", *v.Value + strings.Repeat(" ", ValueNullLength))
 					TTLNullLength := 10 - len(strconv.FormatInt(*v.TTL, 10))
 					fmt.Printf("%-10s", strconv.FormatInt(*v.TTL, 10) + strings.Repeat(" ", TTLNullLength))
@@ -185,8 +192,9 @@ func main(){
 				}
 			}
 		}
-		
+		os.Exit(0)
 	}
+	flag.PrintDefaults()
 }
 
 // 初始化域名对应的配置文件，提供一个域名解析的全部必要字段
@@ -195,17 +203,19 @@ func initDomainConfig() *aliutils.DomainConfig{
 		fmt.Println("请输入完整的子域名，如: bar.foo.com")
 		os.Exit(1)
 	}
-	// if len(Type) == 0 {
-	// 	Type = "A"
-	// }
+	if len(Type) == 0 {
+		Type = "A"
+	}
 	if len(Value) == 0 {
 		fmt.Println("请指定记录值")
 		os.Exit(1)
 	}
-	ip := net.ParseIP(Value)
-	if ip == nil {
-		fmt.Println("提供的IP地址不合法")
-		os.Exit(1)
+	if Type == "A" {
+		ip := net.ParseIP(Value)
+		if ip == nil {
+			fmt.Println("提供的IP地址不合法")
+			os.Exit(1)
+		}
 	}
 	dn := strings.Split(DN, ".")
 	if len(dn) <= 2 {
@@ -245,6 +255,9 @@ func initDelSubDomainRecordsConfig() *aliutils.DomainConfig {
 		fmt.Println("请输入完整的子域名，如: bar.foo.com")
 		os.Exit(1)
 	}
+	if len(Type) == 0 {
+		Type = "A"
+	}
 	// 将用户提供的DN按照'.'进行分割成数组，默认数组的最后两个元素为域名(即一级域名和二级域名)，其余的为子域名
 	dsdrconfig := &aliutils.DomainConfig{
 		DomainName: strings.Join(dn[len(dn) - 2:], "."),
@@ -268,6 +281,9 @@ func beforeUpdateDomainRecordConfig() *aliutils.ListDomainConfig {
 	if len(dn) <= 2 {
 		fmt.Println("请输入完整的子域名，如: bar.foo.com")
 		os.Exit(1)
+	}
+	if len(Type) == 0 {
+		Type = "A"
 	}
 	// 由于查找的子域名必须精确，设置搜索模式为EXACT，并设置搜索关键字KeyWord进行精确查找，RRKeyWord在查找中将不起作用
 	ldrconfig := &aliutils.ListDomainConfig{

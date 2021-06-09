@@ -38,8 +38,8 @@ alidns-utilgo -add -dn bar.foo.com -v 127.0.0.1
 
 ### -del --del
 ***<font color=red>危险操作，谨慎使用</font>***<br>
-删除域名下的主机记录对应的解析记录，需和`-dn`一同使用.
-+ 删除foo.com域名下bar主机记录对应的所有解析记录
+删除域名下的主机记录对应的解析记录，需和`-dn`一同使用, 默认删除A记录类型
++ 删除foo.com域名下bar主机记录对应的A解析记录
 ```
 alidns-utilgo -del -dn bar.foo.com
 ```
@@ -47,7 +47,7 @@ alidns-utilgo -del -dn bar.foo.com
 ```
 alidns-utilgo -del -dn bar.foo.com -t CNAME
 ```
-> <font color=Orange>删除主机记录时，如果未通过-t指定解析类型，将会删除该主机记录的所有解析类型。例如：bar记录同时存在MX,A,CNAME这三种解析类型，如未指定其中之一，将全部删除所有解析类型。</font>
+> <font color=Orange>删除主机记录时，如果未通过-t指定解析类型，将会删除该主机记录的A解析类型。例如：bar记录为CNAME解析类型，如未指定，将不能正常删除。</font>
 
 ### -update --update
 更新域名解析，需要配合`-dn`和`-u`参数使用，指定的`-dn`必须能确定一个唯一的解析记录，否则报错。参数`-u`的值需要按照key=value的键值对形式提供，多个键值对以 ***`,`*** 分割,支持的key类型如下
