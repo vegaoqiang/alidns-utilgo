@@ -94,3 +94,14 @@ alidns-utilgo --list -dn foo.com -s bar
 alidns-utilgo --list -dn bar.foo.com -s abc
 ```
 > 在域名下搜索解析时，通过-s参数指定的关键字类型可以是：解析类型Type, 主机记录RR, 解析值Value
+
+### 其他参数
++ -accesskey        指定ak
++ -accesssecret     指定ak对应的密码
++ -region           指定区域
++ -dn               指定域名
++ -init             初始化账户配置
++ -c, -config       指定配置文件位置
++ -s, -search       指定所搜关键字
++ -t, -type         指定解析记录类型
++ -v, -value        指定解析记录值
