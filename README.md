@@ -10,12 +10,12 @@ chmod +x alidns-utilgo
 ### 自行编译
 + Linux可执行文件
 ```
-CGO_ENABLED=0  GOOS=linux  GOARCH=amd64  go build main.go -o alidns-utilgo
+CGO_ENABLED=0  GOOS=linux  GOARCH=amd64  go build -o alidns-utilgo main.go
 ```
 
 + macOs可执行文件
 ```
-CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64  go build main.go -o alidns-utilgo
+CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64  go build -o alidns-utilgo main.go
 ```
 
 ## 使用方法
